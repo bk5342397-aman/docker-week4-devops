@@ -1,18 +1,41 @@
 services:
-  web:
+  frontend:
     image: aman-devops-web:1.0
-    container_name: aman-compose-web
+    container_name: aman-frontend
     ports:
       - "8083:80"
+    depends_on:
+      - backend
     networks:
-      - aman-compose-network
+      - aman-network
 
-  redis:
-    image: redis:latest
-    container_name: aman-compose-redis
+  backend:
+    build:
+      context: ./backend
+    container_name: aman-backend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - database
     networks:
-      - aman-compose-network
+      - aman-network
+
+  database:
+    image: mysql:8.0
+    container_name: aman-database
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: devopsdb
+      MYSQL_USER: aman
+      MYSQL_PASSWORD: amanpassword
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - aman-network
+
+volumes:
+  mysql-data:
 
 networks:
-  aman-compose-network:
+  aman-network:
     driver: bridge
