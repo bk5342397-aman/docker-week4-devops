@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+    }
+
     environment {
         APP_NAME = 'week9-cicd-app'
         IMAGE_NAME = 'week9-cicd-app'
@@ -36,7 +40,7 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER .'
+                sh 'docker build --progress=plain -t $IMAGE_NAME:$BUILD_NUMBER .'
             }
         }
 
@@ -48,7 +52,8 @@ pipeline {
 
         stage('Verify') {
             steps {
-                sh 'echo "Application deployment verified!"'
+                sh 'docker image inspect $IMAGE_NAME:$BUILD_NUMBER >/dev/null'
+                sh 'echo "Docker image verification passed!"'
             }
         }
     }
