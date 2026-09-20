@@ -6,8 +6,9 @@ pipeline {
     }
 
     environment {
-        APP_NAME = 'week9-cicd-app'
+        APP_NAME = 'week9-app'
         IMAGE_NAME = 'week9-cicd-app'
+        APP_PORT = '8082'
     }
 
     stages {
@@ -27,13 +28,13 @@ pipeline {
         stage('Test') {
             steps {
                 sh 'test -f index.html'
-                sh 'echo "Basic test passed!"'
+                sh 'grep -q "Welcome to My Docker Website" index.html'
+                sh 'echo "Automated tests passed!"'
             }
         }
 
         stage('Package') {
             steps {
-                sh 'echo "Packaging application..."'
                 sh 'tar -czf app-package.tar.gz index.html Dockerfile'
             }
         }
@@ -46,14 +47,19 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh 'echo "Deployment stage completed for build $BUILD_NUMBER"'
+                sh '''
+                    docker rm -f $APP_NAME 2>/dev/null || true
+                    docker run -d --name $APP_NAME -p $APP_PORT:80 $IMAGE_NAME:$BUILD_NUMBER
+                    sleep 3
+                '''
             }
         }
 
         stage('Verify') {
             steps {
+                sh 'docker ps --filter name=$APP_NAME --format "{{.Names}}" | grep -q "$APP_NAME"'
                 sh 'docker image inspect $IMAGE_NAME:$BUILD_NUMBER >/dev/null'
-                sh 'echo "Docker image verification passed!"'
+                sh 'echo "Deployment verification passed!"'
             }
         }
     }
